@@ -68,7 +68,7 @@ setopt prompt_subst
 #   %F{yellow}...%f      - git branch in yellow (empty when not in a repo)
 #   $_kube_info          - kube context/namespace in magenta (empty when not set)
 #   $_cmd_duration       - last command duration in yellow/red (empty for fast cmds)
-PROMPT='%F{green}%n@%m%f %F{cyan}%~%f %F{yellow}${vcs_info_msg_0_}%f${_kube_info}${_cmd_duration}
+PROMPT=$'\n''%F{green}%n@%m%f %F{cyan}%~%f %F{yellow}${vcs_info_msg_0_}%f${_kube_info}${_cmd_duration}
 %# '
 
 # === Utility functions ===
