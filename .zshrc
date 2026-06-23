@@ -32,6 +32,8 @@ HISTORY_IGNORE="(exit|clear|history|pwd)"
 # Enable vcs_info for Git branch info
 autoload -Uz vcs_info
 
+_kube_config_mtime=0
+
 precmd() {
 	vcs_info
 
@@ -50,6 +52,14 @@ precmd() {
 		unset _cmd_start
 	else
 		_cmd_duration=""
+	fi
+
+	# Auto-refresh kube cache if ~/.kube/config was modified externally (e.g. aws eks update-kubeconfig)
+	local current_mtime
+	current_mtime=$(stat -f %m "${HOME}/.kube/config" 2>/dev/null || echo 0)
+	if [[ "$current_mtime" != "$_kube_config_mtime" ]]; then
+		_kube_config_mtime=$current_mtime
+		_refresh_kube_cache
 	fi
 }
 
@@ -100,7 +110,7 @@ update_kubeconfig() {
 	done
 }
 
-# Cache kubectl context/namespace — refresh only on context/namespace switch.
+# Cache kubectl context/namespace - refresh only on context/namespace switch.
 # Avoids spawning kubectl subprocesses on every prompt render.
 _refresh_kube_cache() {
 	if command -v kubectl &>/dev/null && [[ -f "${HOME}/.kube/config" ]]; then
@@ -190,61 +200,18 @@ alias kwno="watch kubectl get nodes"
 
 # === Aliases - Helm ===
 
-alias h="helm"
 alias hl="helm list -A"
-alias hla="helm list -A --all"
 alias hru="helm repo update"
-alias hrls="helm repo list"
 
 
 # === Aliases - Git ===
 
-alias g="git"
-alias gs="git status"
 alias gl="git log --oneline --graph --decorate -20"
-alias gd="git diff"
-alias gds="git diff --stat"
-alias ga="git add"
-alias gaa="git add -A"
-alias gcm="git commit -m"
-alias gca="git commit --amend --no-edit"
-alias gp="git push"
-alias gpf="git push --force-with-lease"
-alias gpl="git pull --rebase"
-alias gf="git fetch --all --prune"
-alias gb="git branch"
-alias gba="git branch -a"
-alias gco="git checkout"
-alias gcb="git checkout -b"
-alias gst="git stash"
-alias gstl="git stash list"
-alias gstp="git stash pop"
-alias grb="git rebase"
-alias grbi="git rebase -i"
-alias gtag="git tag --sort=-creatordate | head -20"
 
 
 # === Aliases - AWS ===
 
 alias awsid="aws sts get-caller-identity"
-alias awsregion="aws configure get region"
-alias s3ls="aws s3 ls"
-alias s3lsr="aws s3 ls --recursive"
-# ECR login: auto-detects AWS region and account from current CLI config
-alias ecr-login='aws ecr get-login-password --region $(aws configure get region) | docker login --username AWS --password-stdin $(aws sts get-caller-identity --query Account --output text).dkr.ecr.$(aws configure get region).amazonaws.com'
-
-
-# === Aliases - Docker ===
-
-alias d="docker"
-alias dps="docker ps"
-alias dpsa="docker ps -a"
-alias di="docker images"
-alias dex="docker exec -it"
-alias dlf="docker logs -f"
-alias drm="docker rm"
-alias drmi="docker rmi"
-alias dprune="docker system prune -f"
 
 
 # === Aliases - General shell ===
@@ -293,10 +260,6 @@ _refresh_kube_cache  # populate kube prompt info on shell start
     "kubectl top pods -A"
 
     # git
-    "git log --oneline --graph --decorate -20"
-    "git status"
-    "git diff --stat"
-    "git stash list"
     "git fetch --all --prune"
 
     # AWS / EKS
